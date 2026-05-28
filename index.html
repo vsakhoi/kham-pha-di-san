@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Khám phá di sản Việt - Online</title>
+    <style>
+        :root {
+            --heritage-red: #8b1d1d;
+            --heritage-gold: #d4af37;
+            --correct-green: #28a745;
+            --wrong-red: #dc3545;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+        
+        #nav-buttons {
+            position: fixed; top: 10px; right: 10px; z-index: 999; display: flex; gap: 10px;
+        }
+        
+        .nav-btn {
+            padding: 10px 16px; background: var(--heritage-red); color: white; border: none;
+            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: 0.2s;
+        }
+        
+        .nav-btn:hover { background: #a02929; transform: scale(1.05); }
+        .nav-btn.active { background: var(--heritage-gold); color: #000; }
+
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-left: 20px;
+            height: 100vh;
+            background: #121212;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        #game-wrapper {
+            display: flex;
+            gap: 20px;
+            width: 98vw;
+            height: 98vh;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #side-panel {
+            width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #right-panel {
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .chat-box,
+        #room-box {
+            width: 350px;
+            max-width: 100%;
+        }
+
+        /* KHUNG SA BÀN TỐI ƯU */
+        #main-container {
+            position: relative;
+            height: 95vh;
+            aspect-ratio: 1 / 1;
+            background: url('assets/sa ban.png') no-repeat center;
+            background-size: contain;
+            border: 3px solid var(--heritage-gold);
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.9);
+            background-color: #222;
+        }
+
+        .pawn {
+            width: 8%;
+            height: 8%;
+            position: absolute;
+            z-index: 100;
+            transition: top 0.12s ease, left 0.12s ease;
+            filter: drop-shadow(2px 4px 6px black);
+            border-radius: 50%;
+        }
+
+        /* BẢNG ĐIỀU KHIỂN */
+        .passport {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 15px;
+            border-left: 10px solid var(--heritage-red);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .stamp {
+            color: #bbb;
+            font-size: 13px;
+            margin: 6px 0;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .stamp.active {
+            color: #d35400;
+            font-weight: bold;
+            transform: scale(1.08);
+            background: #fff3e0;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        /* ROOM ID BOX */
+        #room-box {
+            background: white;
+            padding: 18px;
+            border-radius: 16px;
+            border: 2px solid var(--heritage-gold);
+            text-align: center;
+            font-size: 12px;
+            width: 100%;
+        }
+
+        .chat-box {
+            width: 100%;
+            min-height: 340px;
+        }
+
+        #room-id {
+            font-weight: bold;
+            color: var(--heritage-red);
+            font-size: 14px;
+            margin: 5px 0;
+        }
+
+        .copy-btn {
+            background: var(--heritage-gold);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* POPUP TRẮC NGHIỆM THÔNG MINH */
+        #event-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 6px double var(--heritage-gold);
+            padding: 35px;
+            z-index: 200;
+            display: none;
+            text-align: center;
+            width: 450px;
+            border-radius: 25px;
+            box-shadow: 0 0 150px black;
+        }
+
+        #event-popup.large-popup {
+            width: min(70vw, 860px);
+            min-width: 52vw;
+            padding: 26px 22px;
+            border-color: #1d4d7a;
+            background: #fcfcff;
+        }
+
+        #event-popup.large-popup #ev-type {
+            color: #1d4d7a;
+        }
+
+        #event-popup.large-popup #ev-desc img,
+        #event-popup #ev-desc img.popup-img {
+            width: 95%;
+            max-width: 820px;
+            max-height: 620px;
+            object-fit: contain;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .quiz-btn {
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            padding: 14px;
+            width: 100%;
+            margin: 10px 0;
+            cursor: pointer;
+            border-radius: 12px;
+            text-align: left;
+            font-size: 16px;
+            transition: 0.3s;
+            font-weight: 500;
+        }
+
+        #control-box {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            border: 3px solid var(--heritage-gold);
+        }
+
+        .btn-main {
+            background: var(--heritage-red);
+            color: white;
+            border: none;
+            padding: 18px;
+            width: 100%;
+            cursor: pointer;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 4px 0 #5a1212;
+        }
+
+        .btn-main:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #5a1212;
+        }
+
+        .chat-box {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 18px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border: 3px solid var(--heritage-gold);
+            max-height: 420px;
+            overflow: hidden;
+        }
+
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 8px;
+        }
+
+        .chat-message {
+            max-width: 90%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.4;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+
+        .chat-message.me {
+            align-self: flex-end;
+            background: #ffe7d6;
+            color: #2f1b0b;
+        }
+
+        .chat-message.other {
+            align-self: flex-start;
+            background: #e8f4ff;
+            color: #163d61;
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-row input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #ccc;
+            border-radius: 12px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .chat-input-row button {
+            min-width: 100px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: none;
+            background: var(--heritage-red);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #status-txt {
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="nav-buttons">
+        <button class="nav-btn" onclick="location.href='1-main.html'">🎮 Single</button>
+        <button class="nav-btn active" onclick="location.href='index.html'">👥 Multiplayer</button>
+    </div>
+
+    <div id="game-wrapper">
+        <div id="side-panel">
+            <div class="chat-box">
+                <strong style="font-size: 16px; color: var(--heritage-red);">Chat nhanh</strong>
+                <div id="chat-history" class="chat-history"></div>
+                <div class="chat-input-row">
+                    <input id="chat-input" type="text" placeholder="Gõ tin nhắn..." autocomplete="off">
+                    <button id="chat-send-btn" onclick="sendChatMessage()">Gửi</button>
+                </div>
+            </div>
+            <div id="room-box">
+                <div>🎮 PHÒNG CHƠI</div>
+                <div id="room-id">Tạo phòng...</div>
+                <button class="copy-btn" onclick="copyRoomCode()">📋 Copy link</button>
+                <div id="status-txt">Đang kết nối...</div>
+            </div>
+        </div>
+        <div id="main-container">
+            <div id="event-popup">
+                <h2 id="ev-type" style="color:var(--heritage-red); margin:0; font-size: 24px;"></h2>
+                <p id="ev-desc" style="margin: 20px 0; font-size: 18px; line-height: 1.5;"></p>
+                <div id="quiz-options"></div>
+                <button id="close-ev-btn" class="btn-main" onclick="closeEvent()">TIẾP TỤC HÀNH TRÌNH</button>
+            </div>
+
+            <img id="p1" class="pawn" src="assets/nam.jpg">
+            <img id="p2" class="pawn" src="assets/nu.jpg">
+        </div>
+        <div id="right-panel">
+            <div class="passport" id="pass-p1">
+                <strong style="color:var(--heritage-red); font-size: 18px;">ẤN TÍN: NGƯỜI 1</strong>
+                <div id="p1-s0" class="stamp">○ Di sản Thế giới</div>
+                <div id="p1-s1" class="stamp">○ Phi vật thể</div>
+                <div id="p1-s2" class="stamp">○ Di sản Tư liệu</div>
+                <div id="p1-s3" class="stamp">○ Khu sinh quyển</div>
+            </div>
+            <div class="passport" id="pass-p2">
+                <strong style="color:var(--heritage-red); font-size: 18px;">ẤN TÍN: NGƯỜI 2</strong>
+                <div id="p2-s0" class="stamp">○ Di sản Thế giới</div>
+                <div id="p2-s1" class="stamp">○ Phi vật thể</div>
+                <div id="p2-s2" class="stamp">○ Di sản Tư liệu</div>
+                <div id="p2-s3" class="stamp">○ Khu sinh quyển</div>
+            </div>
+            <div id="control-box">
+                <div id="turn-txt" style="font-weight:bold; font-size: 20px; margin-bottom: 10px;">Lượt: Người 1</div>
+                <div id="turn-timer" style="font-size: 14px; color: #333; margin-bottom: 12px; font-weight: 600;">15
+                    giây</div>
+                <div id="dice-display" style="font-size: 80px; margin: 10px 0;">🎲</div>
+                <button id="roll-btn" class="btn-main" onclick="playTurn()">GIEO QUẺ</button>
+                <button id="bgm-toggle-btn" class="btn-main" style="margin-top: 12px; background: #1d4d7a; box-shadow: 0 4px 0 #133754;" onclick="toggleBackgroundMusic()">Nhạc nền: BẬT</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+    <script>
+        // ===== FIREBASE CONFIG =====
+        const firebaseConfig = {
+            apiKey: "AIzaSyB7og_3zdJosOStMO3Nr6zhcQE7O7Ij7d4",
+            authDomain: "game-62f0d.firebaseapp.com",
+            databaseURL: "https://game-62f0d-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "game-62f0d",
+            storageBucket: "game-62f0d.appspot.com",
+            messagingSenderId: "90123704849",
+            appId: "1:90123704849:web:c856083d52c823661eafb0",
+            measurementId: "G-YLXM5QFM11"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let gameRoomId = null;
+        let myPlayerIndex = null;
+        let isLocalMove = false; // Flag để tránh sync vòng lặp
+        let turnStartAt = Date.now();
+        let waitingForRoll = true;
+        let turnTimer = null;
+        let messages = [];
+
+        // ===== TẠO HOẶC KHÔI PHỤC ROOM =====
+        function initGame() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomFromUrl = urlParams.get('room');
+
+            if (roomFromUrl) {
+                // Tham gia phòng hiện có
+                gameRoomId = roomFromUrl;
+                myPlayerIndex = 1; // Người thứ 2
+                document.getElementById('status-txt').innerText = '✅ Đã tham gia phòng';
+            } else {
+                // Tạo phòng mới
+                gameRoomId = 'game_' + Date.now();
+                myPlayerIndex = 0; // Người đầu tiên
+                document.getElementById('status-txt').innerText = '✅ Phòng được tạo';
+            }
+
+            document.getElementById('room-id').innerText = gameRoomId;
+
+            // Sync dữ liệu từ Firebase
+            syncGameState();
+
+            // Nếu Firebase không phản hồi trong 4 giây, thông báo lỗi kết nối
+            setTimeout(() => {
+                const status = document.getElementById('status-txt').innerText;
+                if (status === 'Đang kết nối...') {
+                    document.getElementById('status-txt').innerText = '⚠️ Không thể kết nối Firebase';
+                }
+            }, 4000);
+        }
+
+        // ===== SYNC GAME STATE =====
+        function syncGameState() {
+            const roomRef = db.ref(`rooms/${gameRoomId}`);
+
+            roomRef.on('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    // Phòng không tồn tại, tạo mới
+                    const initialData = {
+                        p1: { pos: 0, active: false, stamps: [0, 0, 0, 0] },
+                        p2: { pos: 0, active: false, stamps: [0, 0, 0, 0] },
+                        turn: 0,
+                        waitingForRoll: true,
+                        turnStartAt: Date.now(),
+                        messages: [],
+                        timestamp: Date.now()
+                    };
+                    roomRef.set(initialData)
+                        .then(() => {
+                            messages = [];
+                            waitingForRoll = true;
+                            turnStartAt = initialData.turnStartAt;
+                            document.getElementById('status-txt').innerText = '✅ Phòng đã sẵn sàng';
+                            updateUI();
+                            renderChatMessages();
+                            refreshControlEnabled();
+                            startTurnTimer();
+                        })
+                        .catch(() => {
+                            document.getElementById('status-txt').innerText = '⚠️ Không thể tạo phòng';
+                        });
+                    return;
+                }
+
+                const data = snapshot.val();
+
+                // Cập nhật players (nếu không phải nước đi của mình)
+                if (!isLocalMove) {
+                    players[0].pos = data.p1?.pos || 0;
+                    players[0].active = data.p1?.active || false;
+                    players[0].stamps = data.p1?.stamps || [0, 0, 0, 0];
+
+                    players[1].pos = data.p2?.pos || 0;
+                    players[1].active = data.p2?.active || false;
+                    players[1].stamps = data.p2?.stamps || [0, 0, 0, 0];
+
+                    turn = data.turn || 0;
+                    turnStartAt = data.turnStartAt || Date.now();
+                    waitingForRoll = typeof data.waitingForRoll === 'boolean' ? data.waitingForRoll : true;
+                    messages = Array.isArray(data.messages) ? data.messages : [];
+                    renderChatMessages();
+                    lastDiceValue = data.lastDice || 0;
+                    if (lastDiceValue > 0) {
+                        document.getElementById('dice-display').innerText = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][lastDiceValue - 1];
+                    }
+                    if (data.event) {
+                        if (data.event.id !== roomEventId) {
+                            roomEvent = data.event;
+                            roomEventId = data.event.id;
+                            showRoomEventPopup(roomEvent);
+                        }
+                    } else {
+                        roomEvent = null;
+                        roomEventId = null;
+                    }
+                    document.getElementById('status-txt').innerText = '✅ Đã kết nối phòng';
+                    updateUI();
+                    refreshControlEnabled();
+                    startTurnTimer();
+                }
+            });
+        }
+
+        // ===== SAVE GAME STATE =====
+        async function saveGameState() {
+            if (!gameRoomId) return;
+
+            isLocalMove = true;
+            const roomRef = db.ref(`rooms/${gameRoomId}`);
+
+            await roomRef.set({
+                p1: {
+                    pos: players[0].pos,
+                    active: players[0].active,
+                    stamps: players[0].stamps
+                },
+                p2: {
+                    pos: players[1].pos,
+                    active: players[1].active,
+                    stamps: players[1].stamps
+                },
+                turn: turn,
+                turnStartAt: turnStartAt,
+                waitingForRoll: waitingForRoll,
+                messages: messages,
+                lastDice: lastDiceValue || 0,
+                event: roomEvent ? roomEvent : null,
+                timestamp: Date.now()
+            });
+
+            isLocalMove = false;
+        }
+
+        function isPopupOpen() {
+            const popup = document.getElementById('event-popup');
+            return popup && popup.style.display === 'block';
+        }
+
+        function refreshControlEnabled() {
+            const rollBtn = document.getElementById('roll-btn');
+            const status = document.getElementById('status-txt');
+            const enableRoll = turn === myPlayerIndex && waitingForRoll && !isPopupOpen();
+            rollBtn.disabled = !enableRoll;
+
+            if (turn === myPlayerIndex) {
+                if (!enableRoll) {
+                    status.innerText = isPopupOpen() ? '⏳ Đang hiển thị thông báo' : '⏳ Đang xử lý...';
+                } else {
+                    status.innerText = '🎲 Đến lượt bạn - chờ bạn gieo quẻ';
+                }
+            } else {
+                status.innerText = '⏳ Đợi đối thủ';
+            }
+        }
+
+        function renderChatMessages() {
+            const history = document.getElementById('chat-history');
+            if (!history) return;
+            history.innerHTML = '';
+            messages.slice(-40).forEach(msg => {
+                const bubble = document.createElement('div');
+                bubble.className = 'chat-message ' + (msg.playerIndex === myPlayerIndex ? 'me' : 'other');
+                bubble.innerText = `${msg.playerIndex === myPlayerIndex ? 'Bạn' : 'Đối thủ'}: ${msg.text}`;
+                history.appendChild(bubble);
+            });
+            history.scrollTop = history.scrollHeight;
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+            messages.push({ playerIndex: myPlayerIndex, text, ts: Date.now() });
+            input.value = '';
+            await saveGameState();
+            renderChatMessages();
+        }
+
+        function updateTurnTimerDisplay(seconds) {
+            let timerEl = document.getElementById('turn-timer');
+            if (!timerEl) return;
+            timerEl.innerText = seconds > 0 ? `Còn ${seconds} giây` : 'Đã quá 15s, bỏ lượt';
+        }
+
+        function startTurnTimer() {
+            clearTimeout(turnTimer);
+            if (!waitingForRoll) {
+                updateTurnTimerDisplay(0);
+                return;
+            }
+            const now = Date.now();
+            const elapsed = Math.floor((now - turnStartAt) / 1000);
+            const remaining = 15 - elapsed;
+            if (remaining <= 0) {
+                skipCurrentTurn();
+                return;
+            }
+            updateTurnTimerDisplay(remaining);
+            turnTimer = setTimeout(startTurnTimer, 500);
+        }
+
+        async function skipCurrentTurn() {
+            if (!waitingForRoll) return;
+            waitingForRoll = false;
+            turn = (turn + 1) % 2;
+            if (players[turn].skipTurn) {
+                players[turn].skipTurn = false;
+                turn = (turn + 1) % 2;
+            }
+            turnStartAt = Date.now();
+            waitingForRoll = true;
+            document.getElementById('status-txt').innerText = '⏭️ Bỏ lượt do quá 15 giây';
+            document.getElementById('dice-display').innerText = '🎲';
+            updateUI();
+            refreshControlEnabled();
+            await saveGameState();
+            startTurnTimer();
+        }
+
+        // ===== COPY ROOM LINK =====
+        function copyRoomCode() {
+            if (!gameRoomId) {
+                alert('Phòng chưa được tạo!');
+                return;
+            }
+
+            const link = window.location.origin + window.location.pathname + `?room=${gameRoomId}`;
+            navigator.clipboard.writeText(link).then(() => {
+                alert('✅ Đã copy link! Chia sẻ cho người khác');
+            });
+        }
+
+        // 1. TỌA ĐỘ PHẦN TRĂM (%) 
+        const path = [
+            [90, 90], [90, 79], [90, 68], [90, 57], [90, 46], [90, 35], [90, 23], [90, 12], [90, 2], // 0-8
+            [78, 2], [67, 2], [56, 2], [45, 2], [34, 2], [23, 2], [12, 2], [2, 2],           // 9-16
+            [2, 12], [2, 23], [2, 34], [2, 45], [2, 56], [2, 67], [2, 78], [2, 89],          // 17-24
+            [12, 89], [23, 89], [34, 89], [45, 89], [56, 89], [67, 89], [78, 89], [89, 89]          // 25-32
+        ];
+
+        const cells = {
+            khiVan: [3, 11, 18, 27],
+            cauHoi: [2, 8, 16, 24],
+            dsTheGioi: [1, 7, 10, 12, 17, 19, 20, 26, 29],
+            dsTuLieu: [4, 15],
+            phiVatThe: [6, 9, 13, 14, 22, 23, 28, 30],
+            sinhQuyen: [31],
+            coHoi: [5, 21, 25]
+        };
+
+        const coHoiCards = [
+            { title: 'Cố đô Huế', target: 29, img: 'assets/C1.jpg' },
+            { title: 'Khu di tích Mỹ Sơn', target: 17, img: 'assets/C2.jpg' },
+            { title: 'Phong Nha - Kẻ Bàng', target: 26, img: 'assets/C3.jpg' },
+            { title: 'Phố cổ Hội An', target: 20, img: 'assets/C4.jpg' },
+            { title: 'Hoàng thành Thăng Long', target: 1, img: 'assets/C5.jpg' },
+            { title: 'Thành Nhà Hồ', target: 7, img: 'assets/C6.jpg' },
+            { title: 'Quần thể Tràng An', target: 19, img: 'assets/C7.jpg' },
+            { title: 'Quần đảo Cát Bà - Vịnh Hạ Long', target: 12, img: 'assets/C8.jpg' },
+            { title: 'Nhã nhạc cung đình Huế', target: 28, img: 'assets/C9.jpg' },
+            { title: 'Đờn ca tài tử Nam bộ', target: 30, img: 'assets/C10.jpg' },
+            { title: 'Cồng chiêng Tây Nguyên', target: 14, img: 'assets/C11.jpg' },
+            { title: 'Dân ca Quan họ', target: 6, img: 'assets/C12.jpg' },
+            { title: 'Hát ca Trù', target: 23, img: 'assets/C13.jpg' },
+            { title: 'Hội Gióng', target: 13, img: 'assets/C14.jpg' },
+            { title: 'Hát Xoan Phú Thọ', target: 22, img: 'assets/C15.jpg' },
+            { title: 'Tín ngưỡng thờ cúng Hùng Vương', target: 9, img: 'assets/C16.jpg' },
+            { title: 'Mộc bản triều Nguyễn', target: 15, img: 'assets/C17.jpg' },
+            { title: 'Bia Tiến sĩ Văn Miếu - Quốc Tử Giám', target: 4, img: 'assets/C18.jpg' },
+            { title: 'KDTSQ Đồng Nai', target: 31, img: 'assets/C19.jpg' },
+            { title: 'Vịnh Hạ Long', target: 10, img: 'assets/C20.jpg' },
+        ];
+        const quizzes = [
+            { q: "Di sản nào của Việt Nam được UNESCO công nhận đầu tiên?", a: ["Cố đô Huế", "Phố cổ Hội An", "Thánh địa Mỹ Sơn"], c: 0 },
+            { q: "Vịnh Hạ Long nổi tiếng nhất với loại địa hình nào?", a: ["Địa hình Karst (đá vôi)", "Địa hình núi lửa", "Địa hình sa mạc"], c: 0 },
+            { q: "Hội An từng là thương cảng quốc tế sầm uất vào thế kỷ nào?", a: ["Thế kỷ 13-14", "Thế kỷ 16-17", "Thế kỷ 19-20"], c: 1 },
+            { q: "Nhã nhạc cung đình Huế đạt đến đỉnh cao vào triều đại nào?", a: ["Triều Lê", "Triều Tây Sơn", "Triều Nguyễn"], c: 2 },
+            { q: "Phong Nha - Kẻ Bàng có hang động nào lớn nhất thế giới?", a: ["Hang Én", "Hang Sơn Đoòng", "Hang Thiên Đường"], c: 1 },
+            { q: "Thành cổ nào được xây dựng bằng đá khối khổng lồ ở Thanh Hóa?", a: ["Kinh Thành Huế", "Hoàng thành Thăng Long", "Thành nhà Hồ"], c: 2 },
+            { q: "Phố cổ Hội An được UNESCO công nhận là di sản văn hóa thế giới vào năm nào?", a: ["1996", "1999", "2000"], c: 1 },
+            { q: "Vịnh Hạ Long được UNESCO công nhận lần thứ 2 vào năm nào?", a: ["2002", "2005", "2000"], c: 2 },
+            { q: "Di sản thế giới hỗn hợp đầu tiên ở Việt Nam là di sản nào?", a: ["Quần thể danh thắng Tràng An", "Quần thể di tích Cố đô Huế", "Phong Nha - Kẻ Bàng"], c: 0 },
+            { q: "Hoàng thành Thăng Long được UNESCO công nhận là di sản văn hóa thế giới vào năm nào?", a: ["2008", "2010", "2012"], c: 1 },
+            { q: "Hội An từng là thương cảng quốc tế sầm uất vào thế kỷ nào?", a: ["Thế kỷ 13-14", "Thế kỷ 16-17", "Thế kỷ 19-20"], c: 1 },
+            { q: "Nhã nhạc cung đình Huế đạt đến đỉnh cao vào triều đại nào?", a: ["Triều Lê", "Triều Tây Sơn", "Triều Nguyễn"], c: 2 },
+            { q: "Đờn ca tài tử Nam bộ được UNESCO công nhận là di sản văn hóa phi vật thể đại diện của nhân loại vào năm nào?", a: ["2009", "2013", "2011"], c: 1 },
+            { q: "Không gian văn hóa Cồng chiêng Tây Nguyên được UNESCO công nhận là Di sản văn hóa Phi vật thể đại diện của nhân loại vào năm nào?", a: ["2005", "2007", "2009"], c: 0 },
+            { q: "Phố cổ Hội An được UNESCO công nhận là di sản văn hóa thế giới vào năm nào?", a: ["1996", "1999", "2000"], c: 1 },
+            { q: "Dân ca Quan họ là nét văn hóa đặc trưng của vùng nào ở Việt Nam?", a: ["Bắc Ninh", "Hải Phòng", "Thái Nguyên"], c: 0 },
+            { q: "Hát Ca Trù có nguồn gốc từ vùng nào của Việt Nam?", a: ["Bắc Bộ", "Nam Bộ", "Trung Bộ"], c: 0 },
+            { q: "Hội Gióng được UNESCO công nhận là Di sản văn hóa Phi vật thể đại diện của nhân loại vào năm nào?", a: ["2015", "2007", "2010"], c: 2 },
+            { q: "Khu di tích Mỹ Sơn là di sản gắn liền với nền văn hóa nào?", a: ["Văn hóa Đại Việt", "Văn hóa Chăm Pa", "Văn hóa Óc Eo"], c: 1 },
+            { q: "Phong Nha - Kẻ Bàng có hang động nào lớn nhất thế giới?", a: ["Hang Én", "Hang Sơn Đoòng", "Hang Thiên Đường"], c: 1 },
+            { q: "Tín ngưỡng thờ cúng Hùng Vương là di sản của tỉnh nào?", a: ["Phú Thọ", "Vĩnh Phúc", "Bắc Ninh"], c: 0 },
+            { q: "Tín ngưỡng thờ cúng Hùng Vương được UNESCO công nhận là di sản văn hóa phi vật thể vào năm nào?", a: ["2010", "2011", "2012"], c: 2 },
+            { q: "Mộc bản triều Nguyễn hiện được lưu giữ tại trung tâm nào ở Việt Nam?", a: ["Trung tâm lưu trữ Quốc gia IV (Đà Lạt)", "Bào tàng lịch sử Quốc gia", "Đại học Quốc gia Hà Nội"], c: 0 },
+            { q: "Tín ngưỡng thờ cúng Hùng Vương được UNESCO công nhận là di sản văn hóa phi vật thể vào năm nào?", a: ["2010", "2011", "2012"], c: 2 },
+            { q: "Mộc bản chùa Vĩnh Nghiêm được UNESCO công nhận là Di sản tư liệu thế giới vào năm nào?", a: ["2014", "2012", "2011"], c: 1 },
+            { q: "Hoàng thành Thăng Long được xây dựng từ thế kỷ nào?", a: ["Thế kỷ VII", "Thế kỷ XI", "Thế kỷ XV"], c: 1 },
+            { q: "Dân ca Quan họ thường được hát theo hình thức nào?", a: ["Đơn ca", "Hát đối đáp", "Đồng ca"], c: 1 },
+            { q: "Bia Tiến sĩ Văn Miếu Quốc Tử Giám được đặt trên lưng con vật nào?", a: ["Rùa đá", "Sư tử đá", "Hồ phù"], c: 0 }
+        ];
+
+        const khiVanList = [
+            { img: 'assets/kv1.png', action: 'move', value: 1 },
+            { img: 'assets/kv2.png', action: 'move', value: 2 },
+            { img: 'assets/kv3.png', action: 'move', value: 3 },
+            { img: 'assets/kv4.png', action: 'move', value: 2 },
+            { img: 'assets/kv5.png', action: 'move', value: 1 },
+            { img: 'assets/kv6.png', action: 'move', value: 1 },
+            { img: 'assets/kv7.png', action: 'move', value: 0 },
+            { img: 'assets/kv9.png', action: 'move', value: -2 },
+            { img: 'assets/kv10.png', action: 'move', value: -3 },
+            { img: 'assets/kv11.png', action: 'move', value: -1 },
+            { img: 'assets/kv12.png', action: 'move', value: -1 },
+            { img: 'assets/kv13.png', action: 'move', value: -2 },
+            { img: 'assets/kv14.png', action: 'move', value: 1 },
+            { img: 'assets/kv17.png', action: 'move', value: -3 },
+
+        ];
+        let players = [
+            { id: 'p1', pos: 0, active: false, stamps: [0, 0, 0, 0], name: 'Người 1', extraTurn: false, skipTurn: false },
+            { id: 'p2', pos: 0, active: false, stamps: [0, 0, 0, 0], name: 'Người 2', extraTurn: false, skipTurn: false }];
+        let turn = 0;
+        let pendingEvent = null;
+        let roomEvent = null;
+        let roomEventId = null;
+        let lastDiceValue = 0;
+
+        const stepSound = new Audio('assets/move.mp3');
+        const winSound = new Audio('assets/win.mp3');
+        const bgMusic = new Audio('assets/bg.mp3');
+        bgMusic.loop = true;
+        bgMusic.volume = 0.28;
+        let bgMusicEnabled = true;
+
+        function playStepSound() {
+            try {
+                stepSound.currentTime = 0;
+                stepSound.play();
+            } catch (e) {
+                console.warn('Không phát được âm thanh bước đi:', e);
+            }
+        }
+
+        function playWinSound() {
+            try {
+                winSound.currentTime = 0;
+                winSound.play();
+            } catch (e) {
+                console.warn('Không phát được âm thanh chiến thắng:', e);
+            }
+        }
+
+        function tryPlayBackgroundMusic() {
+            if (!bgMusicEnabled) return;
+            try {
+                bgMusic.play();
+            } catch (e) {
+                console.warn('Không phát được nhạc nền tự động:', e);
+            }
+        }
+
+        function toggleBackgroundMusic() {
+            bgMusicEnabled = !bgMusicEnabled;
+            if (bgMusicEnabled) {
+                tryPlayBackgroundMusic();
+            } else {
+                bgMusic.pause();
+            }
+            updateBgMusicButton();
+        }
+
+        function updateBgMusicButton() {
+            const btn = document.getElementById('bgm-toggle-btn');
+            if (!btn) return;
+            btn.innerText = bgMusicEnabled ? 'Nhạc nền: BẬT' : 'Nhạc nền: TẮT';
+        }
+
+        function getOtherPlayer(p) {
+            return players.find(other => other.id !== p.id);
+        }
+
+        function resolveCollision(p) {
+            const other = getOtherPlayer(p);
+            if (other.pos === p.pos && other.pos !== 0 && other.active) {
+                other.pos = 0;
+                other.active = false;
+                updateUI();
+                return other;
+            }
+            return null;
+        }
+
+        async function playTurn() {
+            if (turn !== myPlayerIndex) {
+                alert('Chưa đến lượt bạn. Đợi đối thủ đi xong.');
+                return;
+            }
+            waitingForRoll = false;
+            refreshControlEnabled();
+            const p = players[turn];
+            const dice = Math.floor(Math.random() * 6) + 1;
+            lastDiceValue = dice;
+            document.getElementById('dice-display').innerText = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][dice - 1];
+
+            if (!p.active) {
+                p.active = true;
+            }
+
+            document.getElementById('roll-btn').disabled = true;
+            for (let i = 0; i < dice; i++) {
+                p.pos = (p.pos + 1) % path.length;
+                updateUI();
+                playStepSound();
+                await saveGameState();
+
+                if (checkWin(p)) {
+                    return;
+                }
+
+                await new Promise(r => setTimeout(r, 300));
+            }
+
+            await handleFinalCell(p.pos);
+        }
+
+
+        function checkWin(p) {
+            const hasAllStamps = p.stamps.every(s => s === 1);
+            const atFinish = (p.pos === path.length - 1);
+
+            if (hasAllStamps && atFinish) {
+                bgMusic.pause();
+                playWinSound();
+                showPopup("CHIẾN THẮNG!", `Chúc mừng ${p.name} đã thu thập đủ di sản và về đích!`);
+
+
+                const closeBtn = document.getElementById('close-ev-btn');
+                closeBtn.style.display = 'none';
+
+
+                let resetBtn = document.getElementById('reset-game-btn');
+                if (!resetBtn) {
+                    resetBtn = document.createElement('button');
+                    resetBtn.id = 'reset-game-btn';
+                    resetBtn.innerText = "Chơi lại từ đầu";
+                    resetBtn.style.padding = "10px 20px";
+                    resetBtn.style.marginTop = "10px";
+                    resetBtn.style.cursor = "pointer";
+                    resetBtn.style.background = "var(--heritage-gold)";
+                    resetBtn.onclick = () => { location.reload(); };
+                    closeBtn.parentNode.appendChild(resetBtn);
+                }
+                resetBtn.style.display = 'block';
+
+                document.getElementById('roll-btn').disabled = true;
+                return true;
+            }
+            return false;
+        }
+
+
+        async function handleFinalCell(pos) {
+            const p = players[turn];
+
+            if (cells.cauHoi.includes(pos)) {
+                await triggerQuiz();
+                return;
+            } else if (cells.coHoi.includes(pos)) {
+                const card = coHoiCards[Math.floor(Math.random() * coHoiCards.length)];
+                p.pos = card.target;
+                updateUI();
+
+                const hit = resolveCollision(p);
+                let desc = `Bốc thẻ CƠ HỘI: ${card.title}.`;
+                if (hit) {
+                    desc += `\n${hit.name} bị đá về ô bắt đầu!`;
+                }
+
+                roomEvent = {
+                    id: Date.now(),
+                    type: 'coHoi',
+                    playerIndex: turn,
+                    card: { title: card.title, img: card.img },
+                    seen: [false, false]
+                };
+                roomEventId = roomEvent.id;
+                showPopup("CƠ HỘI", desc, card.img, true);
+                await saveGameState();
+            } else if (cells.khiVan.includes(pos)) {
+                const card = khiVanList[Math.floor(Math.random() * khiVanList.length)];
+                pendingEvent = { type: 'khiVan', playerIndex: turn, card };
+                showPopup("KHÍ VẬN", "Bạn gặp KHÍ VẬN. Bấm TIẾP TỤC HÀNH TRÌNH để áp dụng hiệu ứng.", card.img, true);
+                await saveGameState();
+                return;
+            } else {
+                if (cells.dsTheGioi.includes(pos)) p.stamps[0] = 1;
+                if (cells.phiVatThe.includes(pos)) p.stamps[1] = 1;
+                if (cells.dsTuLieu.includes(pos)) p.stamps[2] = 1;
+                if (cells.sinhQuyen.includes(pos)) p.stamps[3] = 1;
+                updateUI();
+                if (!checkWin(p)) nextTurn();
+            }
+        }
+
+        async function triggerQuiz() {
+            const q = quizzes[Math.floor(Math.random() * quizzes.length)];
+            pendingEvent = { type: 'quiz', playerIndex: turn };
+            showPopup("CÂU HỎI DI SẢN", q.q);
+            await saveGameState();
+            const area = document.getElementById('quiz-options');
+            area.innerHTML = '';
+            q.a.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-btn';
+                btn.innerText = (idx == 0 ? "A. " : idx == 1 ? "B. " : "C. ") + opt;
+                btn.onclick = async () => {
+                    const btns = area.querySelectorAll('button');
+                    btns.forEach(b => b.disabled = true);
+
+                    if (idx === q.c) {
+                        btn.style.background = "#d4edda";
+                        btn.style.borderColor = "#28a745";
+                        btn.style.color = "#155724";
+                    } else {
+                        btn.style.background = "#f8d7da";
+                        btn.style.borderColor = "#dc3545";
+                        btn.style.color = "#721c24";
+                        btns[q.c].style.background = "#d4edda";
+                        btns[q.c].style.borderColor = "#28a745";
+                        btns[q.c].style.fontWeight = "bold";
+                        players[turn].pos = Math.max(0, players[turn].pos - 2);
+                    }
+                    await new Promise(r => setTimeout(r, 2500));
+                    await closeEvent();
+                    updateUI();
+                };
+                area.appendChild(btn);
+            });
+            document.getElementById('close-ev-btn').style.display = 'none';
+        }
+
+        function showPopup(t, d, imgUrl = null, showCloseButton = false) {
+            const popup = document.getElementById('event-popup');
+            popup.classList.toggle('large-popup', t === 'CƠ HỘI');
+            document.getElementById('ev-type').innerText = t;
+            const descArea = document.getElementById('ev-desc');
+            if (imgUrl) {
+                descArea.innerHTML = `<img src="${imgUrl}" class="popup-img"><p style="margin-top:18px; white-space: pre-line;">${d}</p>`;
+            } else {
+                descArea.innerText = d;
+            }
+            document.getElementById('quiz-options').innerHTML = '';
+            const closeBtn = document.getElementById('close-ev-btn');
+            closeBtn.style.display = showCloseButton ? 'block' : 'none';
+            popup.style.display = 'block';
+            document.getElementById('roll-btn').disabled = true;
+        }
+
+        function showRoomEventPopup(event) {
+            roomEvent = event;
+            roomEventId = event.id;
+            const isActor = event.playerIndex === myPlayerIndex;
+            const actorName = players[event.playerIndex]?.name || `Người ${event.playerIndex + 1}`;
+            const desc = isActor
+                ? `Bạn vừa bốc thẻ CƠ HỘI: ${event.card.title}.`
+                : `Đối thủ bốc thẻ CƠ HỘI: ${event.card.title}.`;
+            showPopup("CƠ HỘI", desc, event.card.img, true);
+        }
+
+        async function acknowledgeRoomEvent() {
+            if (!roomEvent) return;
+            roomEvent.seen[myPlayerIndex] = true;
+            if (roomEvent.seen[0] && roomEvent.seen[1]) {
+                roomEvent = null;
+                roomEventId = null;
+            }
+            await saveGameState();
+        }
+
+        async function closeEvent() {
+            document.getElementById('event-popup').style.display = 'none';
+            document.getElementById('close-ev-btn').style.display = 'block';
+
+            if (roomEvent && roomEvent.type === 'coHoi') {
+                const actor = players[roomEvent.playerIndex];
+                await acknowledgeRoomEvent();
+                if (myPlayerIndex === roomEvent.playerIndex) {
+                    if (!checkWin(actor)) {
+                        await nextTurn();
+                    }
+                } else {
+                    updateUI();
+                    refreshControlEnabled();
+                    startTurnTimer();
+                }
+                return;
+            }
+
+            if (pendingEvent) {
+                const p = players[pendingEvent.playerIndex];
+                if (pendingEvent.type === 'coHoi') {
+                    pendingEvent = null;
+                    if (!checkWin(p)) {
+                        await nextTurn();
+                    }
+                    return;
+                }
+                if (pendingEvent.type === 'quiz') {
+                    pendingEvent = null;
+                    if (!checkWin(p)) {
+                        await nextTurn();
+                    }
+                    return;
+                }
+                if (pendingEvent.type === 'khiVan') {
+                    const card = pendingEvent.card;
+                    pendingEvent = null;
+                    if (card.action === 'move') {
+                        p.pos = Math.max(0, Math.min(path.length - 1, p.pos + card.value));
+                    } else if (card.action === 'extra') {
+                        p.extraTurn = true;
+                    } else if (card.action === 'skip') {
+                        p.skipTurn = true;
+                    } else if (card.action === 'reset') {
+                        p.pos = 0;
+                    }
+                    updateUI();
+                    await saveGameState();
+                    if (!checkWin(p)) {
+                        if (p.extraTurn) {
+                            p.extraTurn = false;
+                            waitingForRoll = true;
+                            turnStartAt = Date.now();
+                            refreshControlEnabled();
+                            await saveGameState();
+                            startTurnTimer();
+                        } else {
+                            await nextTurn();
+                        }
+                    }
+                    return;
+                }
+            }
+
+            await nextTurn();
+            refreshControlEnabled();
+        }
+
+        function updateUI() {
+            players.forEach((p, i) => {
+                const [top, left] = path[p.pos];
+                const el = document.getElementById(p.id);
+                el.style.top = top + '%';
+                el.style.left = (left + (i * 2)) + '%';
+                p.stamps.forEach((s, idx) => {
+                    if (s) document.getElementById(`${p.id}-s${idx}`).className = "stamp active";
+                });
+            });
+            document.getElementById('turn-txt').innerText = "Lượt: " + players[turn].name;
+        }
+
+        function nextTurn() {
+            turn = (turn + 1) % 2;
+            if (players[turn].skipTurn) {
+                players[turn].skipTurn = false;
+                turn = (turn + 1) % 2;
+            }
+            waitingForRoll = true;
+            turnStartAt = Date.now();
+            document.getElementById('turn-txt').innerText = "Lượt: " + players[turn].name;
+            refreshControlEnabled();
+            saveGameState();
+            startTurnTimer();
+        }
+
+        window.onload = () => {
+            initGame();
+            updateUI();
+            updateBgMusicButton();
+            tryPlayBackgroundMusic();
+            const chatInput = document.getElementById('chat-input');
+            if (chatInput) {
+                chatInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        sendChatMessage();
+                    }
+                });
+            }
+            // Enable background music on first user interaction
+            document.addEventListener('click', () => {
+                if (bgMusicEnabled && bgMusic.paused) {
+                    bgMusic.play().catch(e => console.warn('Autoplay prevented:', e));
+                }
+            }, { once: true });
+        };
+    </script>
+</body>
+
+</html>
