@@ -15,19 +15,38 @@
         * {
             box-sizing: border-box;
         }
-        
+
         #nav-buttons {
-            position: fixed; top: 10px; right: 10px; z-index: 999; display: flex; gap: 10px;
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 999;
+            display: flex;
+            gap: 10px;
         }
-        
+
         .nav-btn {
-            padding: 10px 16px; background: var(--heritage-red); color: white; border: none;
-            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: 0.2s;
+            padding: 10px 16px;
+            background: var(--heritage-red);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            transition: 0.2s;
         }
-        
-        .nav-btn:hover { background: #a02929; transform: scale(1.05); }
-        .nav-btn.active { background: var(--heritage-gold); color: #000; }
+
+        .nav-btn:hover {
+            background: #a02929;
+            transform: scale(1.05);
+        }
+
+        .nav-btn.active {
+            background: var(--heritage-gold);
+            color: #000;
+        }
 
         body {
             margin: 0;
@@ -362,7 +381,9 @@
                     giây</div>
                 <div id="dice-display" style="font-size: 80px; margin: 10px 0;">🎲</div>
                 <button id="roll-btn" class="btn-main" onclick="playTurn()">GIEO QUẺ</button>
-                <button id="bgm-toggle-btn" class="btn-main" style="margin-top: 12px; background: #1d4d7a; box-shadow: 0 4px 0 #133754;" onclick="toggleBackgroundMusic()">Nhạc nền: BẬT</button>
+                <button id="bgm-toggle-btn" class="btn-main"
+                    style="margin-top: 12px; background: #1d4d7a; box-shadow: 0 4px 0 #133754;"
+                    onclick="toggleBackgroundMusic()">Nhạc nền: BẬT</button>
             </div>
         </div>
     </div>
@@ -372,7 +393,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
     <script>
-        // ===== FIREBASE CONFIG =====
+ 
         const firebaseConfig = {
             apiKey: "AIzaSyB7og_3zdJosOStMO3Nr6zhcQE7O7Ij7d4",
             authDomain: "game-62f0d.firebaseapp.com",
@@ -384,7 +405,7 @@
             measurementId: "G-YLXM5QFM11"
         };
 
-        // Initialize Firebase
+ 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
@@ -396,18 +417,18 @@
         let turnTimer = null;
         let messages = [];
 
-        // ===== TẠO HOẶC KHÔI PHỤC ROOM =====
+ 
         function initGame() {
             const urlParams = new URLSearchParams(window.location.search);
             const roomFromUrl = urlParams.get('room');
 
             if (roomFromUrl) {
-                // Tham gia phòng hiện có
+ 
                 gameRoomId = roomFromUrl;
                 myPlayerIndex = 1; // Người thứ 2
                 document.getElementById('status-txt').innerText = '✅ Đã tham gia phòng';
             } else {
-                // Tạo phòng mới
+ 
                 gameRoomId = 'game_' + Date.now();
                 myPlayerIndex = 0; // Người đầu tiên
                 document.getElementById('status-txt').innerText = '✅ Phòng được tạo';
@@ -415,10 +436,10 @@
 
             document.getElementById('room-id').innerText = gameRoomId;
 
-            // Sync dữ liệu từ Firebase
+ 
             syncGameState();
 
-            // Nếu Firebase không phản hồi trong 4 giây, thông báo lỗi kết nối
+ 
             setTimeout(() => {
                 const status = document.getElementById('status-txt').innerText;
                 if (status === 'Đang kết nối...') {
@@ -427,13 +448,13 @@
             }, 4000);
         }
 
-        // ===== SYNC GAME STATE =====
+ 
         function syncGameState() {
             const roomRef = db.ref(`rooms/${gameRoomId}`);
 
             roomRef.on('value', (snapshot) => {
                 if (!snapshot.exists()) {
-                    // Phòng không tồn tại, tạo mới
+                   
                     const initialData = {
                         p1: { pos: 0, active: false, stamps: [0, 0, 0, 0] },
                         p2: { pos: 0, active: false, stamps: [0, 0, 0, 0] },
@@ -441,6 +462,7 @@
                         waitingForRoll: true,
                         turnStartAt: Date.now(),
                         messages: [],
+                        pendingEvent: null,
                         timestamp: Date.now()
                     };
                     roomRef.set(initialData)
@@ -462,7 +484,7 @@
 
                 const data = snapshot.val();
 
-                // Cập nhật players (nếu không phải nước đi của mình)
+ 
                 if (!isLocalMove) {
                     players[0].pos = data.p1?.pos || 0;
                     players[0].active = data.p1?.active || false;
@@ -475,6 +497,7 @@
                     turn = data.turn || 0;
                     turnStartAt = data.turnStartAt || Date.now();
                     waitingForRoll = typeof data.waitingForRoll === 'boolean' ? data.waitingForRoll : true;
+                    pendingEvent = data.pendingEvent || null;
                     messages = Array.isArray(data.messages) ? data.messages : [];
                     renderChatMessages();
                     lastDiceValue = data.lastDice || 0;
@@ -491,6 +514,13 @@
                         roomEvent = null;
                         roomEventId = null;
                     }
+                    if (pendingEvent && pendingEvent.playerIndex === myPlayerIndex && !isPopupOpen()) {
+                        if (pendingEvent.type === 'quiz' && pendingEvent.quiz) {
+                            displayQuiz(pendingEvent.quiz);
+                        } else if (pendingEvent.type === 'khiVan' && pendingEvent.card) {
+                            showPopup("KHÍ VẬN", "Bạn gặp KHÍ VẬN. Bấm TIẾP TỤC HÀNH TRÌNH để áp dụng hiệu ứng.", pendingEvent.card.img, true);
+                        }
+                    }
                     document.getElementById('status-txt').innerText = '✅ Đã kết nối phòng';
                     updateUI();
                     refreshControlEnabled();
@@ -499,34 +529,38 @@
             });
         }
 
-        // ===== SAVE GAME STATE =====
+ 
         async function saveGameState() {
             if (!gameRoomId) return;
 
             isLocalMove = true;
             const roomRef = db.ref(`rooms/${gameRoomId}`);
-
-            await roomRef.set({
-                p1: {
-                    pos: players[0].pos,
-                    active: players[0].active,
-                    stamps: players[0].stamps
-                },
-                p2: {
-                    pos: players[1].pos,
-                    active: players[1].active,
-                    stamps: players[1].stamps
-                },
-                turn: turn,
-                turnStartAt: turnStartAt,
-                waitingForRoll: waitingForRoll,
-                messages: messages,
-                lastDice: lastDiceValue || 0,
-                event: roomEvent ? roomEvent : null,
-                timestamp: Date.now()
-            });
-
-            isLocalMove = false;
+            try {
+                await roomRef.set({
+                    p1: {
+                        pos: players[0].pos,
+                        active: players[0].active,
+                        stamps: players[0].stamps
+                    },
+                    p2: {
+                        pos: players[1].pos,
+                        active: players[1].active,
+                        stamps: players[1].stamps
+                    },
+                    turn: turn,
+                    turnStartAt: turnStartAt,
+                    waitingForRoll: waitingForRoll,
+                    messages: messages,
+                    lastDice: lastDiceValue || 0,
+                    event: roomEvent ? roomEvent : null,
+                    pendingEvent: pendingEvent ? pendingEvent : null,
+                    timestamp: Date.now()
+                });
+            } catch (error) {
+                console.warn('Lỗi khi lưu trạng thái phòng:', error);
+            } finally {
+                isLocalMove = false;
+            }
         }
 
         function isPopupOpen() {
@@ -537,12 +571,16 @@
         function refreshControlEnabled() {
             const rollBtn = document.getElementById('roll-btn');
             const status = document.getElementById('status-txt');
-            const enableRoll = turn === myPlayerIndex && waitingForRoll && !isPopupOpen();
+            const enableRoll = turn === myPlayerIndex && waitingForRoll && !isPopupOpen() && !isMoving;
             rollBtn.disabled = !enableRoll;
 
             if (turn === myPlayerIndex) {
                 if (!enableRoll) {
-                    status.innerText = isPopupOpen() ? '⏳ Đang hiển thị thông báo' : '⏳ Đang xử lý...';
+                    if (isMoving) {
+                        status.innerText = '⏳ Đang di chuyển...';
+                    } else {
+                        status.innerText = isPopupOpen() ? '⏳ Đang hiển thị thông báo' : '⏳ Đang xử lý...';
+                    }
                 } else {
                     status.innerText = '🎲 Đến lượt bạn - chờ bạn gieo quẻ';
                 }
@@ -586,9 +624,18 @@
                 updateTurnTimerDisplay(0);
                 return;
             }
+
+ 
+            if (turn !== myPlayerIndex) {
+                let timerEl = document.getElementById('turn-timer');
+                if (timerEl) timerEl.innerText = "Đang đợi đối thủ...";
+                return;
+            }
+
             const now = Date.now();
             const elapsed = Math.floor((now - turnStartAt) / 1000);
             const remaining = 15 - elapsed;
+
             if (remaining <= 0) {
                 skipCurrentTurn();
                 return;
@@ -599,7 +646,12 @@
 
         async function skipCurrentTurn() {
             if (!waitingForRoll) return;
+           
+            if (turn !== myPlayerIndex) return;
+
             waitingForRoll = false;
+            isLocalMove = true; 
+
             turn = (turn + 1) % 2;
             if (players[turn].skipTurn) {
                 players[turn].skipTurn = false;
@@ -607,15 +659,18 @@
             }
             turnStartAt = Date.now();
             waitingForRoll = true;
+
             document.getElementById('status-txt').innerText = '⏭️ Bỏ lượt do quá 15 giây';
             document.getElementById('dice-display').innerText = '🎲';
             updateUI();
             refreshControlEnabled();
+
             await saveGameState();
+            isLocalMove = false; 
             startTurnTimer();
         }
 
-        // ===== COPY ROOM LINK =====
+ 
         function copyRoomCode() {
             if (!gameRoomId) {
                 alert('Phòng chưa được tạo!');
@@ -628,7 +683,7 @@
             });
         }
 
-        // 1. TỌA ĐỘ PHẦN TRĂM (%) 
+ 
         const path = [
             [90, 90], [90, 79], [90, 68], [90, 57], [90, 46], [90, 35], [90, 23], [90, 12], [90, 2], // 0-8
             [78, 2], [67, 2], [56, 2], [45, 2], [34, 2], [23, 2], [12, 2], [2, 2],           // 9-16
@@ -724,6 +779,8 @@
         let roomEvent = null;
         let roomEventId = null;
         let lastDiceValue = 0;
+        let isMoving = false;
+        let isClosingPopup = false;
 
         const stepSound = new Audio('assets/move.mp3');
         const winSound = new Audio('assets/win.mp3');
@@ -731,6 +788,7 @@
         bgMusic.loop = true;
         bgMusic.volume = 0.28;
         let bgMusicEnabled = true;
+        let userInteracted = false;
 
         function playStepSound() {
             try {
@@ -751,7 +809,7 @@
         }
 
         function tryPlayBackgroundMusic() {
-            if (!bgMusicEnabled) return;
+            if (!bgMusicEnabled || !userInteracted) return;
             try {
                 bgMusic.play();
             } catch (e) {
@@ -796,6 +854,7 @@
                 return;
             }
             waitingForRoll = false;
+            isMoving = true;
             refreshControlEnabled();
             const p = players[turn];
             const dice = Math.floor(Math.random() * 6) + 1;
@@ -811,15 +870,18 @@
                 p.pos = (p.pos + 1) % path.length;
                 updateUI();
                 playStepSound();
-                await saveGameState();
 
                 if (checkWin(p)) {
+                    isMoving = false;
+                    await saveGameState();
                     return;
                 }
 
                 await new Promise(r => setTimeout(r, 300));
             }
 
+            isMoving = false;
+            refreshControlEnabled();
             await handleFinalCell(p.pos);
         }
 
@@ -898,15 +960,19 @@
                 if (cells.dsTuLieu.includes(pos)) p.stamps[2] = 1;
                 if (cells.sinhQuyen.includes(pos)) p.stamps[3] = 1;
                 updateUI();
-                if (!checkWin(p)) nextTurn();
+                if (!checkWin(p)) await nextTurn();
             }
         }
 
         async function triggerQuiz() {
             const q = quizzes[Math.floor(Math.random() * quizzes.length)];
-            pendingEvent = { type: 'quiz', playerIndex: turn };
-            showPopup("CÂU HỎI DI SẢN", q.q);
+            pendingEvent = { type: 'quiz', playerIndex: turn, quiz: q };
+            displayQuiz(q);
             await saveGameState();
+        }
+
+        function displayQuiz(q) {
+            showPopup("CÂU HỎI DI SẢN", q.q);
             const area = document.getElementById('quiz-options');
             area.innerHTML = '';
             q.a.forEach((opt, idx) => {
@@ -952,8 +1018,10 @@
             document.getElementById('quiz-options').innerHTML = '';
             const closeBtn = document.getElementById('close-ev-btn');
             closeBtn.style.display = showCloseButton ? 'block' : 'none';
+            closeBtn.disabled = false;
             popup.style.display = 'block';
             document.getElementById('roll-btn').disabled = true;
+            isClosingPopup = false;
         }
 
         function showRoomEventPopup(event) {
@@ -976,10 +1044,18 @@
             }
             await saveGameState();
         }
-
         async function closeEvent() {
-            document.getElementById('event-popup').style.display = 'none';
-            document.getElementById('close-ev-btn').style.display = 'block';
+            if (isClosingPopup) return;
+            isClosingPopup = true;
+
+
+            isLocalMove = true;
+
+            const popup = document.getElementById('event-popup');
+            popup.style.display = 'none';
+            const closeBtn = document.getElementById('close-ev-btn');
+            closeBtn.style.display = 'block';
+            closeBtn.disabled = true;
 
             if (roomEvent && roomEvent.type === 'coHoi') {
                 const actor = players[roomEvent.playerIndex];
@@ -987,29 +1063,31 @@
                 if (myPlayerIndex === roomEvent.playerIndex) {
                     if (!checkWin(actor)) {
                         await nextTurn();
+                    } else {
+                        await saveGameState();
                     }
                 } else {
                     updateUI();
                     refreshControlEnabled();
+                    await saveGameState();
                     startTurnTimer();
                 }
+                isClosingPopup = false;
+                isLocalMove = false;
                 return;
             }
 
             if (pendingEvent) {
                 const p = players[pendingEvent.playerIndex];
-                if (pendingEvent.type === 'coHoi') {
+                if (pendingEvent.type === 'coHoi' || pendingEvent.type === 'quiz') {
                     pendingEvent = null;
                     if (!checkWin(p)) {
                         await nextTurn();
+                    } else {
+                        await saveGameState();
                     }
-                    return;
-                }
-                if (pendingEvent.type === 'quiz') {
-                    pendingEvent = null;
-                    if (!checkWin(p)) {
-                        await nextTurn();
-                    }
+                    isClosingPopup = false;
+                    isLocalMove = false;
                     return;
                 }
                 if (pendingEvent.type === 'khiVan') {
@@ -1037,13 +1115,19 @@
                         } else {
                             await nextTurn();
                         }
+                    } else {
+                        await saveGameState();
                     }
+                    isClosingPopup = false;
+                    isLocalMove = false;
                     return;
                 }
             }
 
             await nextTurn();
             refreshControlEnabled();
+            isClosingPopup = false;
+            isLocalMove = false;
         }
 
         function updateUI() {
@@ -1059,7 +1143,7 @@
             document.getElementById('turn-txt').innerText = "Lượt: " + players[turn].name;
         }
 
-        function nextTurn() {
+        async function nextTurn() {
             turn = (turn + 1) % 2;
             if (players[turn].skipTurn) {
                 players[turn].skipTurn = false;
@@ -1069,7 +1153,7 @@
             turnStartAt = Date.now();
             document.getElementById('turn-txt').innerText = "Lượt: " + players[turn].name;
             refreshControlEnabled();
-            saveGameState();
+            await saveGameState();
             startTurnTimer();
         }
 
@@ -1077,7 +1161,6 @@
             initGame();
             updateUI();
             updateBgMusicButton();
-            tryPlayBackgroundMusic();
             const chatInput = document.getElementById('chat-input');
             if (chatInput) {
                 chatInput.addEventListener('keydown', (e) => {
@@ -1087,8 +1170,9 @@
                     }
                 });
             }
-            // Enable background music on first user interaction
+ 
             document.addEventListener('click', () => {
+                userInteracted = true;
                 if (bgMusicEnabled && bgMusic.paused) {
                     bgMusic.play().catch(e => console.warn('Autoplay prevented:', e));
                 }
